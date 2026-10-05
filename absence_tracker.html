@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absence & Daily Income Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans antialiased flex flex-col transition-colors duration-200">
+
+    <!-- Navbar Header -->
+    <header class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700/80 sticky top-0 z-20">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-indigo-500/20">
+                    <i class="fa-regular fa-calendar-check text-base"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base sm:text-lg leading-tight text-slate-900 dark:text-white">Absence & Income Tracker</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Log absences now and update income at the end of the day</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2">
+                <!-- Theme Toggle Button -->
+                <button id="themeToggle" onclick="toggleDarkMode()" class="p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition">
+                    <i id="themeIcon" class="fa-solid fa-moon text-base"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Calendar Container -->
+    <main class="max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 flex-1 flex flex-col justify-center">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden flex flex-col">
+            
+            <!-- Calendar Navigation Header -->
+            <div class="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700/80 flex flex-wrap items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/50">
+                <div class="flex items-center space-x-3">
+                    <h2 id="calendarMonthYear" class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Month Year</h2>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <button onclick="changeMonth(-1)" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition" title="Previous Month">
+                        <i class="fa-solid fa-chevron-left text-sm"></i>
+                    </button>
+                    <button onclick="goToToday()" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition">
+                        Today
+                    </button>
+                    <button onclick="changeMonth(1)" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition" title="Next Month">
+                        <i class="fa-solid fa-chevron-right text-sm"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Calendar Weekday Header -->
+            <div class="grid grid-cols-7 border-b border-slate-200 dark:border-slate-700/80 bg-slate-100/60 dark:bg-slate-800/80 text-center font-semibold text-xs text-slate-500 dark:text-slate-400 py-3">
+                <div>Sun</div>
+                <div>Mon</div>
+                <div>Tue</div>
+                <div>Wed</div>
+                <div>Thu</div>
+                <div>Fri</div>
+                <div>Sat</div>
+            </div>
+
+            <!-- Calendar Days Grid -->
+            <div id="calendarGrid" class="grid grid-cols-7 auto-rows-fr gap-px bg-slate-200 dark:bg-slate-700/60 text-sm flex-1 min-h-[520px]">
+                <!-- Calendar cells generated via JS -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal for Date Entries and Income Table -->
+    <div id="dateModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden transition-opacity">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-2xl overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
+            
+            <!-- Modal Header -->
+            <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+                <div>
+                    <h3 id="modalDateTitle" class="text-lg font-bold text-slate-900 dark:text-white">Entries for Date</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Log absences or add income for this day</p>
+                </div>
+                <button onclick="closeDateModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content Body -->
+            <div class="p-5 overflow-y-auto space-y-5">
+                
+                <!-- Entry Input Form -->
+                <form id="entryForm" onsubmit="handleFormSubmit(event)" class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700/80 space-y-3">
+                    <input type="hidden" id="entryEditId">
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                        <div class="sm:col-span-5">
+                            <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                                Name <span class="text-rose-500">*</span>
+                            </label>
+                            <input type="text" id="inputName" required placeholder="Person's name..." class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                        <div class="sm:col-span-4">
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    Income ($)
+                                </label>
+                                <span class="text-[10px] text-indigo-500 dark:text-indigo-400 font-medium">(Optional)</span>
+                            </div>
+                            <input type="number" step="0.01" id="inputIncome" placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                        <div class="sm:col-span-3 flex items-end">
+                            <button type="submit" id="submitBtn" class="w-full py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-medium transition flex items-center justify-center space-x-1 shadow-sm">
+                                <i class="fa-solid fa-plus text-xs"></i>
+                                <span id="submitBtnText">Add Person</span>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 italic">
+                        <i class="fa-solid fa-circle-info text-indigo-500 mr-1"></i> You can leave income blank and update it later at the end of the day.
+                    </p>
+                </form>
+
+                <!-- Interactive Income & Absence Table -->
+                <div class="border border-slate-200 dark:border-slate-700/80 rounded-xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs sm:text-sm">
+                            <thead class="bg-slate-100/70 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-700">
+                                <tr>
+                                    <th class="px-4 py-2.5">Name</th>
+                                    <th class="px-4 py-2.5">Income</th>
+                                    <th class="px-4 py-2.5 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/50 bg-white dark:bg-slate-800">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="emptyTableState" class="hidden p-6 text-center text-slate-400">
+                        <i class="fa-regular fa-folder-open text-2xl mb-1"></i>
+                        <p class="text-xs">No entries for this date. Enter a name above to add an absence.</p>
+                    </div>
+
+                    <!-- Live Summary Footer -->
+                    <div class="px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700/80 flex items-center justify-between font-bold text-xs sm:text-sm">
+                        <div class="text-slate-600 dark:text-slate-400 flex items-center space-x-2">
+                            <span>Total Absences:</span>
+                            <span id="modalTotalCount" class="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold text-xs">0</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-slate-600 dark:text-slate-400 mr-1">Total Day Income:</span>
+                            <span id="modalTotalIncome" class="text-emerald-600 dark:text-emerald-400 text-base font-bold">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Edit Income Popover Modal -->
+    <div id="quickIncomeModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 p-5 w-full max-w-xs space-y-4">
+            <h4 class="font-bold text-sm text-slate-900 dark:text-white flex items-center space-x-2">
+                <i class="fa-solid fa-dollar-sign text-emerald-500"></i>
+                <span id="quickIncomePersonName">Update Income</span>
+            </h4>
+            <input type="hidden" id="quickIncomeRecordId">
+            <div>
+                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Enter Income Amount ($)</label>
+                <input type="number" step="0.01" id="quickIncomeInput" placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+            <div class="flex items-center justify-end space-x-2 pt-2">
+                <button onclick="closeQuickIncomeModal()" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition">Cancel</button>
+                <button onclick="saveQuickIncome()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition shadow-sm">Save Income</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        const STORAGE_KEY = 'calendar_absence_optional_income_db_v2';
+        let records = []; // Record model: { id, name, income: number|null, date: 'YYYY-MM-DD' }
+        let currentDate = new Date();
+        let selectedDateStr = null;
+
+        // Sample initial records
+        const sampleRecords = [
+            { id: '1', name: 'Sarah Jenkins', income: 150.00, date: getFormattedDateOffset(0) },
+            { id: '2', name: 'Michael Brown', income: null, date: getFormattedDateOffset(0) }, // Pending income sample
+            { id: '3', name: 'Alex Rivera', income: 120.00, date: getFormattedDateOffset(-1) },
+            { id: '4', name: 'Emily Taylor', income: null, date: getFormattedDateOffset(2) }
+        ];
+
+        function getFormattedDateOffset(offsetDays) {
+            const d = new Date();
+            d.setDate(d.getDate() + offsetDays);
+            return d.toISOString().split('T')[0];
+        }
+
+        window.onload = function() {
+            initTheme();
+            loadRecords();
+            renderCalendar();
+        };
+
+        function loadRecords() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    records = JSON.parse(saved);
+                } catch(e) {
+                    records = [...sampleRecords];
+                }
+            } else {
+                records = [...sampleRecords];
+                saveRecords();
+            }
+        }
+
+        function saveRecords() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+            renderCalendar();
+            if (selectedDateStr) {
+                renderModalTable(selectedDateStr);
+            }
+        }
+
+        /* Dark Mode Handling */
+        function initTheme() {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('themeIcon').className = 'fa-solid fa-sun text-base';
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('themeIcon').className = 'fa-solid fa-moon text-base';
+            }
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.theme = isDark ? 'dark' : 'light';
+            document.getElementById('themeIcon').className = isDark ? 'fa-solid fa-sun text-base' : 'fa-solid fa-moon text-base';
+        }
+
+        /* Calendar Rendering Logic */
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            document.getElementById('calendarMonthYear').textContent = `${monthNames[month]} ${year}`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const prevMonthDays = new Date(year, month, 0).getDate();
+
+            const calendarGrid = document.getElementById('calendarGrid');
+            calendarGrid.innerHTML = '';
+
+            // Previous Month Overflow Days
+            for (let i = firstDay - 1; i >= 0; i--) {
+                const dayNum = prevMonthDays - i;
+                const cell = createCalendarCell(dayNum, true);
+                calendarGrid.appendChild(cell);
+            }
+
+            // Current Month Days
+            const todayStr = new Date().toISOString().split('T')[0];
+            for (let day = 1; day <= daysInMonth; day++) {
+                const monthFormatted = String(month + 1).padStart(2, '0');
+                const dayFormatted = String(day).padStart(2, '0');
+                const dateStr = `${year}-${monthFormatted}-${dayFormatted}`;
+
+                const cell = createCalendarCell(day, false, dateStr, dateStr === todayStr);
+                calendarGrid.appendChild(cell);
+            }
+
+            // Next Month Trailing Days
+            const totalCells = firstDay + daysInMonth;
+            const remainingCells = (7 - (totalCells % 7)) % 7;
+            for (let i = 1; i <= remainingCells; i++) {
+                const cell = createCalendarCell(i, true);
+                calendarGrid.appendChild(cell);
+            }
+        }
+
+        function createCalendarCell(dayNumber, isOutsideMonth, dateStr = null, isToday = false) {
+            const cell = document.createElement('div');
+            cell.className = `min-h-[85px] sm:min-h-[105px] bg-white dark:bg-slate-800 p-2 flex flex-col justify-between transition group relative ${
+                isOutsideMonth ? 'opacity-30 bg-slate-50/50 dark:bg-slate-900/40 pointer-events-none' : 'hover:bg-indigo-50/50 dark:hover:bg-slate-700/50 cursor-pointer'
+            }`;
+
+            if (!isOutsideMonth && dateStr) {
+                cell.onclick = () => openDateModal(dateStr);
+
+                // Date Number & Badge Header
+                const header = document.createElement('div');
+                header.className = 'flex justify-between items-center';
+
+                const daySpan = document.createElement('span');
+                daySpan.className = `text-xs sm:text-sm font-semibold rounded-full w-7 h-7 flex items-center justify-center ${
+                    isToday ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30' : 'text-slate-700 dark:text-slate-200'
+                }`;
+                daySpan.textContent = dayNumber;
+                header.appendChild(daySpan);
+
+                // Entry count badge
+                const dayEntries = records.filter(r => r.date === dateStr);
+                if (dayEntries.length > 0) {
+                    const countBadge = document.createElement('span');
+                    countBadge.className = 'text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300';
+                    countBadge.textContent = `${dayEntries.length} absent`;
+                    header.appendChild(countBadge);
+                }
+
+                cell.appendChild(header);
+
+                // Person / Income Chips
+                const listContainer = document.createElement('div');
+                listContainer.className = 'space-y-1 mt-1 overflow-y-auto max-h-[60px] text-[11px]';
+
+                dayEntries.forEach(rec => {
+                    const hasIncome = rec.income !== null && rec.income !== undefined && rec.income !== '';
+                    const incomeVal = hasIncome ? parseFloat(rec.income) : null;
+
+                    const chip = document.createElement('div');
+                    chip.className = 'px-1.5 py-0.5 rounded text-[10px] truncate font-medium bg-slate-100 text-slate-800 dark:bg-slate-700/80 dark:text-slate-200 flex justify-between items-center';
+                    
+                    const incomeSpan = hasIncome 
+                        ? `<span class="text-emerald-600 dark:text-emerald-400 font-bold ml-1">$${incomeVal.toFixed(0)}</span>`
+                        : `<span class="text-amber-500 font-semibold ml-1 text-[9px]">Pending</span>`;
+
+                    chip.innerHTML = `<span class="truncate">${escapeHtml(rec.name)}</span> ${incomeSpan}`;
+                    listContainer.appendChild(chip);
+                });
+
+                cell.appendChild(listContainer);
+            } else {
+                const daySpan = document.createElement('span');
+                daySpan.className = 'text-xs text-slate-400';
+                daySpan.textContent = dayNumber;
+                cell.appendChild(daySpan);
+            }
+
+            return cell;
+        }
+
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function goToToday() {
+            currentDate = new Date();
+            renderCalendar();
+        }
+
+        /* Modal Dialog & Table Logic */
+        function openDateModal(dateStr) {
+            selectedDateStr = dateStr;
+            document.getElementById('modalDateTitle').textContent = `Entries for ${dateStr}`;
+            resetEntryForm();
+            renderModalTable(dateStr);
+            document.getElementById('dateModal').classList.remove('hidden');
+        }
+
+        function closeDateModal() {
+            document.getElementById('dateModal').classList.add('hidden');
+            selectedDateStr = null;
+        }
+
+        function resetEntryForm() {
+            document.getElementById('entryForm').reset();
+            document.getElementById('entryEditId').value = '';
+            document.getElementById('submitBtnText').textContent = 'Add Person';
+        }
+
+        function renderModalTable(dateStr) {
+            const dayRecords = records.filter(r => r.date === dateStr);
+            const tbody = document.getElementById('modalTableBody');
+            const emptyState = document.getElementById('emptyTableState');
+            tbody.innerHTML = '';
+
+            let totalIncome = 0;
+
+            if (dayRecords.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            dayRecords.forEach(rec => {
+                const hasIncome = rec.income !== null && rec.income !== undefined && rec.income !== '';
+                const incomeVal = hasIncome ? parseFloat(rec.income) : 0;
+                if (hasIncome) totalIncome += incomeVal;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors';
+                
+                // Income Display Column
+                let incomeTdHtml = '';
+                if (hasIncome) {
+                    incomeTdHtml = `<span class="font-semibold text-emerald-600 dark:text-emerald-400">$${incomeVal.toFixed(2)}</span>`;
+                } else {
+                    incomeTdHtml = `
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                            <i class="fa-regular fa-clock mr-1 text-[10px]"></i> Pending
+                        </span>
+                    `;
+                }
+
+                tr.innerHTML = `
+                    <td class="px-4 py-3 font-medium text-slate-900 dark:text-white">${escapeHtml(rec.name)}</td>
+                    <td class="px-4 py-3">${incomeTdHtml}</td>
+                    <td class="px-4 py-3 text-right space-x-1">
+                        <button onclick="openQuickIncomeModal('${rec.id}')" class="px-2 py-1 rounded bg-slate-100 dark:bg-slate-700 hover:bg-emerald-500 hover:text-white text-slate-600 dark:text-slate-300 text-xs font-medium transition" title="Update or set income">
+                            <i class="fa-solid fa-dollar-sign mr-1"></i>${hasIncome ? 'Edit Income' : 'Set Income'}
+                        </button>
+                        <button onclick="editRecord('${rec.id}')" class="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Edit entry name">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button onclick="deleteRecord('${rec.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Delete entry">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('modalTotalCount').textContent = dayRecords.length;
+            document.getElementById('modalTotalIncome').textContent = `$${totalIncome.toFixed(2)}`;
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const editId = document.getElementById('entryEditId').value;
+            const name = document.getElementById('inputName').value.trim();
+            const rawIncome = document.getElementById('inputIncome').value;
+            
+            // Income optional check
+            const income = (rawIncome !== '' && rawIncome !== null) ? parseFloat(rawIncome) : null;
+
+            if (!name || !selectedDateStr) return;
+
+            if (editId) {
+                const index = records.findIndex(r => r.id === editId);
+                if (index !== -1) {
+                    records[index].name = name;
+                    records[index].income = income;
+                }
+            } else {
+                const newRecord = {
+                    id: Date.now().toString(),
+                    name: name,
+                    income: income,
+                    date: selectedDateStr
+                };
+                records.push(newRecord);
+            }
+
+            saveRecords();
+            resetEntryForm();
+        }
+
+        function editRecord(id) {
+            const rec = records.find(r => r.id === id);
+            if (!rec) return;
+
+            document.getElementById('entryEditId').value = rec.id;
+            document.getElementById('inputName').value = rec.name;
+            document.getElementById('inputIncome').value = rec.income !== null ? rec.income : '';
+            document.getElementById('submitBtnText').textContent = 'Update';
+        }
+
+        function deleteRecord(id) {
+            records = records.filter(r => r.id !== id);
+            saveRecords();
+            resetEntryForm();
+        }
+
+        /* Quick Income Modal Logic */
+        function openQuickIncomeModal(id) {
+            const rec = records.find(r => r.id === id);
+            if (!rec) return;
+
+            document.getElementById('quickIncomeRecordId').value = rec.id;
+            document.getElementById('quickIncomePersonName').textContent = `Update Income: ${rec.name}`;
+            document.getElementById('quickIncomeInput').value = rec.income !== null ? rec.income : '';
+            document.getElementById('quickIncomeModal').classList.remove('hidden');
+        }
+
+        function closeQuickIncomeModal() {
+            document.getElementById('quickIncomeModal').classList.add('hidden');
+        }
+
+        function saveQuickIncome() {
+            const id = document.getElementById('quickIncomeRecordId').value;
+            const rawVal = document.getElementById('quickIncomeInput').value;
+            const index = records.findIndex(r => r.id === id);
+
+            if (index !== -1) {
+                records[index].income = (rawVal !== '' && rawVal !== null) ? parseFloat(rawVal) : null;
+                saveRecords();
+            }
+
+            closeQuickIncomeModal();
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
